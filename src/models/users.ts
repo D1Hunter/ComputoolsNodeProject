@@ -1,39 +1,16 @@
-import {Model,Sequelize,DataTypes,Optional} from "sequelize"
-const sequelize = new Sequelize("");
-interface IUserCreation extends Optional<IUser, "id"> {}
-
-interface IUser{
-    id?:number
-    email:string
-    password:string
-    firstName:string
-    lastName:string
+import {DataTypes,Sequelize} from "sequelize"
+import sequelize from "../database/instantiate_sequalize";
+const User=sequelize.define('users',{
+    id:{type:DataTypes.INTEGER,primaryKey:true,autoIncrement:true},
+    email:{type:DataTypes.STRING,unique:true},
+    password:{type:DataTypes.STRING},
+    firstName:{type:DataTypes.STRING},
+    secondName:{type:DataTypes.STRING},
+    isGoogleAccount:{type:DataTypes.BOOLEAN,defaultValue:false},
+    activationLink:{type:DataTypes.STRING},
+    createdAt: {type:DataTypes.DATE},
+    updatedAt: {type:DataTypes.DATE}
+})
+module.exports={
+    User
 }
-
-export default class User extends Model<IUser,IUserCreation>{}
-    User.init({
-        id:{
-            type:DataTypes.INTEGER,
-            autoIncrement:true,
-            primaryKey:true,
-        },
-        email:{
-            type:DataTypes.STRING,
-            allowNull: false
-        },
-        password:{
-            type:DataTypes.STRING,
-            allowNull:false,
-        },
-        firstName:{
-            type:DataTypes.STRING,
-            allowNull:false
-        },
-        lastName:{
-            type:DataTypes.STRING,
-            allowNull:false
-        },
-    },{
-        sequelize,
-        tableName:"Users",
-    })
