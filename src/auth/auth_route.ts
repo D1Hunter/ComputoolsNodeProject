@@ -1,35 +1,44 @@
 import express from "express";
-import authController from "./auth_controller";
-import {check} from 'express-validator'
+import { check } from 'express-validator';
 import passport from "passport";
-const authMiddleware = require('../middleware/auth_middleware');
+import authController from "./auth_controller";
 
-const controller= authController;
-const Router=express();
+export const AuthRouter=express();
 
-Router.post('/register',[check('email',"Email field cannot be empty").isEmail(),
-check('password',"Password must be longer than 4 and less than 12 characters").isLength({min:4,max:12})],controller.registration)
+//POST
+AuthRouter.post('/register',[
+    check('email',"Wrong email").isString().isEmail(),
+    check('password',"Password must be longer than 4 and less than 12 characters").isString().isLength({min:4,max:12}),
+    check('login',"Login must be longer than 4 and less than 16 characters").isString().isLength({min:4,max:16}),
+    check('firstName','First name must be longer than 4 and less than 30 characters').isString().isLength({min:4,max:30}),
+    check('secondName','Second name must be longer than 4 and less than 30 characters').isString().isLength({min:4,max:30})
+],authController.registration)
 
-Router.post('/login',[check('email',"Email field cannot be empty").isEmail(),
-check('password',"Password must be longer than 4 and less than 12 characters").isLength({min:4,max:12})],controller.login)
+AuthRouter.post('/login',[
+    check('email',"Wrong email").isString().isEmail(),
+    check('password',"Password must be longer than 4 and less than 12 characters").isString().isLength({min:4,max:12})
+],authController.login)
 
-Router.post('/forgot-pass',[check('email',"Email field cannot be empty").isEmail()],controller.forgotPass)
+AuthRouter.post('/forgot-pass',[
+    check('email',"Wrong email").isString().isEmail()
+],authController.forgotPass)
 
-Router.post('/reset-pass/:link',controller.resetPass);
-Router.get('/users',authMiddleware,controller.getUsers);
+AuthRouter.post('/reset-pass/:link',[
+    check('password',"Password must be longer than 4 and less than 12 characters").isLength({min:4,max:12})
+],authController.resetPass);
 
-Router.get('/google',passport.authenticate('google',{scope:['email','profile']}));
+//GET
+AuthRouter.get('/google',passport.authenticate('google',{scope:['email','profile']}));
 
-Router.get('/google/callback',
+AuthRouter.get('/google/callback',
     passport.authenticate('google',{
-        successRedirect:'/auth/google/success',
-        failureMessage:'/auth/google/failure'
-    })    
+        successRedirect:'/api/auth/google/success',
+        failureMessage:'/api/auth/google/failure'
+    })
 );
-Router.get('/google/success',controller.successGoogleAuth);
 
-Router.get('/google/failure', (req, res) => {
-    res.send('Failed to authenticate');
-  });
+AuthRouter.get('/google/success',authController.successGoogleAuth);
 
-export default module.exports=Router;
+AuthRouter.get('/google/failure',authController.failureGoogleAuth);
+
+AuthRouter.get('/google/logout',authController.logoutGoogle);

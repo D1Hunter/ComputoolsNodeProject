@@ -1,4 +1,4 @@
-const { Sequelize }=require ("sequelize");
+import { Sequelize } from "sequelize";
 
 export default new Sequelize(
     process.env.DB_NAME,
@@ -6,6 +6,6 @@ export default new Sequelize(
     process.env.DB_PASSWORD,{
         dialect:"postgres",
         host:process.env.DB_HOST,
-        port:process.env.DB_PORT
+        port:Number(process.env.DB_PORT)
     }
 )

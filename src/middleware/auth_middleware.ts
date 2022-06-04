@@ -1,5 +1,6 @@
-import TokenService from "../service/token_service";
-module.exports = function(req:any,res:any,next:any){
+import TokenService from "../auth/token_service";
+
+export const authMiddleware = function(req:any,res:any,next:any){
     try{
         const authorizationHeader = req.headers.authorization;
         if(!authorizationHeader){

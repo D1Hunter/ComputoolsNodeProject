@@ -3,14 +3,20 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('users', {
       id: {
-        allowNull: false,
-        autoIncrement: true,
+        type: Sequelize.INTEGER,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        autoIncrement: true
       },
       email: {
         type: Sequelize.STRING,
         unique:true
+      },
+      login:{
+        type: Sequelize.STRING,
+        allowNull:false
+      },
+      avatar:{
+        type: Sequelize.STRING
       },
       password:{
         type:Sequelize.STRING
@@ -28,13 +34,21 @@ module.exports = {
       activationLink:{
         type:Sequelize.STRING
       },
-      createdAt: {
-        allowNull: false,
-        type: Sequelize.DATE
+      roleId:{
+        type:Sequelize.INTEGER,
+        defaultValue:1,
+        references: {
+          model: 'roles',
+          key: 'id'
+        },
+        allowNull:false
       },
-      updatedAt: {
-        allowNull: false,
-        type: Sequelize.DATE
+      teamId:{
+        type:Sequelize.INTEGER,
+        references: {
+          model: 'teams',
+          key: 'id'
+        },
       }
     });
   },

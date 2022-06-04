@@ -1,33 +1,25 @@
 import { Response,Request } from 'express';
-import {validationResult} from 'express-validator';
-import mailService from '../service/mail_service';
-import * as uuid from 'uuid';
-import GoogleUserDto  from '../dto/GoogleUserDto';
-import UserDto from '../dto/UserDto';
-import TokenService from '../service/token_service';
-const {User} = require('../models/users');
-const bcrypt = require('bcryptjs');
+import { validationResult } from 'express-validator';
+import authService from './auth_service';
+import ApiError from '../exceptions/api-error';
 
-class authController{
+class AuthController{
     async registration(req:Request,res:Response){
         try{
             const errors = validationResult(req);
             if(!errors.isEmpty()){
-                return res.status(400).json({message: "Registration error", errors})
+                return res.status(400).json({errors})
             }
-            const {email,password,firstName,secondName} = req.body;
-            const user=await User.findOne({where:{email}});
-            if(user){
-                return res.status(400).json({message: "User with this email already exists"})
-            }
-            const hashPassword=await bcrypt.hash(password,6);
-            const userData=await User.create({email,password:hashPassword,firstName,secondName,isGoogleAccount:false});
-            userData as UserDto;
-            const tokens = TokenService.generateTokens({id:userData.id,email:userData.email});
-            return res.json({userData,tokens});
+            const {email,password,login,firstName,secondName} = req.body;
+            const token = await authService.registration(email,password,login,firstName,secondName);
+            return res.json({token});
         }
-        catch(e){
-            console.log(e);
+        catch(error){
+            if(error instanceof ApiError){
+                return res.status(error.status).json({message:error.message});
+            }
+            console.log(error);
+            return res.status(500).json({message:'Registration error'});
         }
     }
 
@@ -35,23 +27,18 @@ class authController{
         try{
             const errors = validationResult(req);
             if(!errors.isEmpty()){
-                return res.status(400).json({message:"Authorization error", errors})
+                return res.status(400).json({errors})
             }
-            const {email,password}=req.body;
-            const user = await User.findOne({where:{email}});
-            if(!user){
-                return res.status(400).json({message:`User ${email} is not found`})
-            }
-            const validPassword=bcrypt.compareSync(password,user.password);
-            if(!validPassword){
-                return res.status(400).json({message:"Wrong password entered"})
-            }
-            user as UserDto;
-            const tokens = TokenService.generateTokens({id:user.id,email:user.email});
-            return res.json({tokens});
+            const {email,password} = req.body;
+            const token = await authService.login(email,password);
+            return res.json({token});
         }
-        catch(e){
-            console.log(e);
+        catch(error){
+            if(error instanceof ApiError){
+                return res.status(error.status).json({message:error.message});
+            }
+            console.log(error);
+            return res.status(500).json({message:'Authorization error'})
         }
     }
 
@@ -61,67 +48,61 @@ class authController{
             if(!errors.isEmpty()){
                 return res.status(400).json({errors});
             }
-            const {email}=req.body;
-            const user = await User.findOne({where:{email}});
-            if(!user){
-                return res.status(400).json({message:`User ${email} is not found`})
-            }
-            const ActivationLink=uuid.v4();
-            user.activationLink=ActivationLink;
-            await user.save();
-            mailService.sendActivationMail(email,`${process.env.API_URL}/auth/reset-pass/${ActivationLink}`);
-            return res.json({message:`A link to reset your password has been sent to your email ${email}`});
+            const {email} = req.body;
+            const message = await authService.forgotPass(email);
+            return res.json({message});
         }
-        catch(e){
-            console.log(e);
+        catch(error){
+            if(error instanceof ApiError){
+                return res.status(error.status).json({message:error.message});
+            }
+            console.log(error);
+            return res.status(500).json({message:'Forgot password error'});
         }
     }
 
     async resetPass(req:Request,res:Response){
         try{
-            const activationLink=req.params.link;
-            const user = await User.findOne({where:{activationLink}});
-            const {password} = req.body;
-            const validPassword=bcrypt.compareSync(password,user.password);
-            if(validPassword){
-                return res.json({message:'This password is already in use'})
+            const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return res.status(400).json({errors})
             }
-            const hashPassword = bcrypt.hashSync(password,8);
-            user.password=hashPassword;
-            await user.save();
-            return res.json({message:"New password set"});
+            const activationLink=req.params.link;
+            const {password} = req.body;
+            const message = await authService.resetPass(activationLink,password);
+            return res.json({message});
         }
         catch(e){
             console.log(e);
-        }
-    }
-    async getUsers(req:Request,res:Response) {
-        try {
-            const users = await User.findAll();
-            return res.json(users);
-        } catch (e) {
-            console.log(e);
+            if(e instanceof ApiError){
+                return res.status(e.status).json({message:e.message});
+            }
+            return res.status(500).json({message:'Reset password error'});
         }
     }
 
     async successGoogleAuth(req:Request,res:Response){
         try {
-            const userDto=req.user as GoogleUserDto;
-            let user = await User.findOne({where:{email:userDto.email}});
-            if(!user){
-                user = await User.create({email:user.email,firstName:user.given_name,secondName:user.family_name,isGoogleAccount:true})
+            const user=req.user;
+            const token = await authService.googleAuth(user.email,user.name.givenName+" "+user.name.familyName,user.name.givenName,user.name.familyName);
+            return res.json({token});
+        } catch (error) {
+            if(error instanceof ApiError){
+                return res.status(error.status).json({message:error.message});
             }
-            else{
-                const isGoogleAccount=user.isGoogleAccount;
-                if(!isGoogleAccount){
-                    return res.status(400).json({message:'This email is already in use'});
-                }
-            }
-            const tokens = TokenService.generateTokens({id:user.id,email:user.email});
-            return res.json(tokens);
-        } catch (e) {
-            console.log(e);
+            console.log(error);
+            return res.status(500).json({message:'Google auth error'});
         }
     }
+
+    async failureGoogleAuth(req:Request,res:Response){
+        return ApiError.internal('Failed to authenticate');
+    }
+    
+    async logoutGoogle(req:Request,res:Response){
+        req.session.destroy(()=>{});
+        return res.json({message: 'Logged out from Google Account'})
+    }
 }
-export default new authController();
+
+export default new AuthController();
