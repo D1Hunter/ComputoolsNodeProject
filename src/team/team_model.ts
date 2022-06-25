@@ -1,4 +1,5 @@
 import {DataTypes,Model} from "sequelize"
+import TeamUserKick from "../team_user_kick/team_user_kick_model";
 import database from "../db/instantiate_sequalize";
 
 interface ITeamAtributes{
@@ -19,3 +20,6 @@ Team.init({
     timestamps: false,
     modelName:'teams'
 })
+
+Team.hasMany(TeamUserKick);
+TeamUserKick.belongsTo(Team);

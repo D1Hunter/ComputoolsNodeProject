@@ -4,14 +4,13 @@ class BanListService{
     async create(userId:number,reason:string,banDate:Date):Promise<BanList>{
         return await BanList.create({userId,reason,banDate,unbanDate:null});
     }
-    async update(ban:BanList,reason:string,banDate?:Date,unbanDate?:Date):Promise<BanList>{
-        if(banDate){
-            return await ban.update({reason,banDate,unbanDate});
-        }
+
+    async update(ban:BanList,reason:string,unbanDate?:Date):Promise<BanList>{
         return await ban.update({reason,unbanDate});
     }
-    async getByUser(userId:number):Promise<BanList>{
-        return await BanList.findOne({where:{userId}});
+    
+    async getByUser(userId:number):Promise<BanList[]>{
+        return await BanList.findAll({where:{userId}});
     }
 }
 

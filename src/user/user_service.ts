@@ -1,11 +1,13 @@
-import User from './user_model';
+import * as uuid from 'uuid';
 import ApiError from '../exceptions/api-error';
-import roleService from '../role/role_service';
+import User from './user_model';
 import Role from '../role/role_model';
 import { RoleType } from '../role/role_type';
+import roleService from '../role/role_service';
 import banListService from '../ban_list/ban_list_service';
 import fileService from '../profile/file_service';
 import BanList from '../ban_list/ban_list_model';
+import TeamRequest from '../team_request/teamrequest_model';
 
 class UserService{
     async getUserById(id:number):Promise<User>{
@@ -17,15 +19,26 @@ class UserService{
     }
 
     async getUserByActivationLink(activationLink:string):Promise<User>{
-        return await User.findOne({where:{activationLink}})
+        return await User.findOne({where:{activationLink},include:[Role]});
+    }
+
+    async getAllUsers():Promise<User[]>{
+        return await User.findAll({include:[Role, TeamRequest, BanList], attributes: {exclude: ['password','activationLink']}});
     }
 
     async create(email:string,password:string,login:string,firstName:string,secondName:string,isGoogleAccount?:boolean):Promise<User>{
         return await User.create({email,login,password,firstName,secondName,isGoogleAccount});
     }
 
-    async update(user:User,login?:string,password?:string):Promise<void>{
-        await user.update({login,password});
+    async update(user:User,login?:string,password?:string):Promise<User>{
+        return await user.update({login,password});
+    }
+
+    async createActivationLink(user:User):Promise<string>{
+        const activationLink=uuid.v4();
+        user.activationLink=activationLink;
+        await user.save();
+        return activationLink;
     }
 
     async delete(user:User):Promise<void>{
@@ -50,32 +63,28 @@ class UserService{
     }
 
     async changeProfile(id:number,avatar:any,login?:string,password?:string):Promise<User>{
-        const userProfile= await this.getUserById(id);
+        let userProfile= await this.getUserById(id);
         if(!userProfile){
             throw ApiError.badRequest('User with this id is not exists');
         }
         if(login||password){
-            await this.update(userProfile,login,password);
+            userProfile = await this.update(userProfile,login,password);
         }
         if(avatar){
-            await fileService.uploadAvatar(userProfile,avatar);
+            userProfile = await fileService.uploadAvatar(userProfile,avatar);
         }
         return userProfile;
     }
 
-    async getAllUsers():Promise<User[]>{
-        return await User.findAll({include:[Role], attributes: { exclude: ['password'] }});
-    }
-
     async getManagers():Promise<User[]>{
         const role = await roleService.getRoleByName(RoleType.MANAGER);
-        const managers = await User.findAll({where:{roleId:role.id},include:[Role],attributes: { exclude: ['password'] }});
+        const managers = await User.findAll({where:{roleId:role.id},include:[Role,BanList],attributes: { exclude: ['password','activationLink']}});
         return managers;
     }
 
     async getManagerById(id:number):Promise<User>{
         const role = await roleService.getRoleByName(RoleType.MANAGER);
-        const manager = await User.findOne({where:{id},include:[Role],attributes: { exclude: ['password'] }});
+        const manager = await User.findOne({where:{id},include:[Role,BanList],attributes: { exclude: ['password','activationLink']}});
         if(!manager){
             throw ApiError.badRequest('User with this id is not exist');
         }
@@ -96,38 +105,42 @@ class UserService{
         }
         return false;
     }
+    
+    userIsGoogleAccount(user:User):boolean{
+        return Boolean(user.isGoogleAccount)
+    }
 
     async banUser(userId:number,reason:string):Promise<BanList>{
         const user = await this.getUserById(userId);
         if(!user){
             throw ApiError.badRequest('User with this id is not exist');
         }
-        let ban = await banListService.getByUser(user.id);
-        if(ban){
-            if(ban.unbanDate){
-                await ban.destroy();
-            }
-            else if(ban.banDate){
+        const userBans = await banListService.getByUser(user.id);
+        let userBan = userBans[userBans.length-1];
+        if(userBan){
+            if(userBan.banDate&&!userBan.unbanDate){
                 throw ApiError.badRequest('User already banned');
             }
         }
-        ban = await banListService.create(userId,reason,new Date(Date.now()));
-        return ban;
+        userBan = await banListService.create(userId,reason,new Date(Date.now()));
+        return userBan;
     }
+    
     async unbanUser(userId:number,reason:string):Promise<BanList>{
         const user = await this.getUserById(userId);
         if(!user){
             throw ApiError.badRequest('User with this id is not exist');
         }
-        let userBan = await banListService.getByUser(userId);
+        const userBans = await banListService.getByUser(user.id);
+        let userBan = userBans[userBans.length-1];
         if(!userBan){
             throw ApiError.badRequest('This user is not banned');
         }
         if(userBan.unbanDate){
             throw ApiError.badRequest('User already unbanned');
         }
-        userBan = await banListService.update(userBan,reason,null,new Date(Date.now()));
-        return userBan; 
+        userBan = await banListService.update(userBan,reason,new Date(Date.now()));
+        return userBan;
     }
 }
 

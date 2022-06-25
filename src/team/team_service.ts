@@ -1,11 +1,10 @@
-import TeamRequest from "../team_request/teamrequest_model";
 import ApiError from "../exceptions/api-error";
 import Team from "./team_model";
 import User from "../user/user_model";
 import userService from "../user/user_service";
 import teamUserKickService from "../team_user_kick/team_user_kick_service"
 import TeamUserKick from "../team_user_kick/team_user_kick_model";
-TeamRequest
+
 class TeamService{
     async create(teamName:string):Promise<Team>{
         return await Team.create({teamName});
@@ -16,11 +15,11 @@ class TeamService{
     }
 
     async getTeamById(teamId:number):Promise<Team>{
-        return await Team.findOne({where:{id:teamId},include:[{model:User}]});
+        return await Team.findOne({where:{id:teamId},include:{model:User,attributes: { exclude: ['password','activationLink'] }}});
     }
 
     async getAllTeams():Promise<Team[]>{
-        return await Team.findAll({include:[{model:User}]});
+        return await Team.findAll({include:{model:User,attributes: { exclude: ['password','activationLink'] }}});
     }
 
     async kick(userId:number,reason:string):Promise<TeamUserKick>{
@@ -36,6 +35,11 @@ class TeamService{
         user.teamId=null;
         await user.save();
         return teamUserKick;
+    }
+
+    async addUserToTeam(user:User,team:Team):Promise<void>{
+        user.teamId=team.id;
+        await user.save();
     }
     
     checkUserOnTeam(user:User,team:Team):boolean{

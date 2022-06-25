@@ -84,6 +84,20 @@ class TeamRequestController{
             return res.status(500).json({message: 'Error creating move team request'});
         }
     }
+    
+    async deleteRequest(req:Request,res:Response){
+        try{
+            const userId = req.user.id;
+            const message = await teamrequestService.deleteRequest(userId);
+            return res.json({message});
+        }catch (error){
+            if(error instanceof ApiError){
+                return res.status(error.status).json({message:error.message});
+            }
+            console.log(error);
+            return res.status(500).json({message: 'Error deleting request'});
+        }
+    }
 
     async acceptRequest(req:Request,res:Response){
         try {

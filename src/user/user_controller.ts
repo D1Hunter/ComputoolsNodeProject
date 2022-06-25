@@ -8,7 +8,7 @@ class userController{
         try {
             const userId = req.user.id;
             const userProfile = await userService.getProfile(userId);
-            return res.json(userProfile)
+            return res.json(userProfile);
         } catch (error) {
             if(error instanceof ApiError){
                 return res.status(error.status).json({message:error.message});
@@ -51,6 +51,9 @@ class userController{
     async getManagerById(req:Request,res:Response){
         try {
             const{id} = req.query;
+            if(!Number(id)){
+                throw ApiError.badRequest('User not found');
+            }
             const manager = await userService.getManagerById(Number(id));
             return res.json(manager);
         } catch (error) {
@@ -75,6 +78,9 @@ class userController{
     async getUserById(req:Request,res:Response){
         try {
             const{userId} = req.params;
+            if(!Number(userId)){
+                throw ApiError.badRequest('User not found');
+            }
             const user = await userService.getUserById(Number(userId));
             if(!user){
                 throw ApiError.badRequest('User not found');
@@ -128,8 +134,11 @@ class userController{
     async delete(req:Request,res:Response){
         try {
             const{userId} = req.params;
+            if(!Number(userId)){
+                throw ApiError.badRequest('User not found');
+            }
             const message = await userService.deleteUser(Number(userId));
-            return res.json(message);
+            return res.json({message});
         } catch (error) {
             if(error instanceof ApiError){
                 return res.status(error.status).json({message:error.message});

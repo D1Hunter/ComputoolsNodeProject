@@ -65,13 +65,10 @@ ApplicationList.belongsTo(User);
 User.hasOne(TeamRequest);
 TeamRequest.belongsTo(User);
 
-User.hasOne(BanList);
+User.hasMany(BanList);
 BanList.belongsTo(User);
 
-Team.hasMany(TeamUserKick);
-TeamUserKick.belongsTo(Team);
-
-User.hasOne(TeamUserKick);
+User.hasMany(TeamUserKick);
 TeamUserKick.belongsTo(User);
 
 declare global {

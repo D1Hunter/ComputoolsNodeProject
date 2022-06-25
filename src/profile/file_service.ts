@@ -6,13 +6,13 @@ import User from "../user/user_model";
 const IMAGE_FOLDER_PATH = process.env.IMAGE_FOLDER_PATH;
 
 class FileService{
-    async uploadAvatar(user:User,file:any):Promise<void>{
+    async uploadAvatar(user:User,file:any):Promise<User>{
         if(user.avatar){
             this.removeFile(IMAGE_FOLDER_PATH+"/"+user.avatar);
         }
         const avatar = this.uploadFile(file);
         user.avatar=avatar;
-        await user.save();
+        return await user.save();
     }
     
     uploadFile(file:any):string{

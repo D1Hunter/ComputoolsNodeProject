@@ -35,7 +35,7 @@ UserRouter.get('/all',[
 UserRouter.get('/:userId',[
     authMiddleware,
     notBannedMiddleware,
-    roleMiddleware([RoleType.ADMIN])
+    roleMiddleware([RoleType.MANAGER,RoleType.ADMIN])
 ],userController.getUserById);
 
 //PATCH
@@ -50,13 +50,17 @@ UserRouter.patch('/',[
 UserRouter.post('/banUser',[
     authMiddleware,
     notBannedMiddleware,
-    roleMiddleware([RoleType.ADMIN])
+    roleMiddleware([RoleType.ADMIN]),
+    check('userId','Wrong user id').isNumeric(),
+    check('reason','Wrong reason').isString().isLength({min:4,max:50})
 ],userController.banUser);
 
 UserRouter.post('/unbanUser',[
     authMiddleware,
     notBannedMiddleware,
-    roleMiddleware([RoleType.ADMIN])
+    roleMiddleware([RoleType.ADMIN]),
+    check('userId','Wrong user id').isNumeric(),
+    check('reason','Wrong reason').isString().isLength({min:4,max:50})
 ],userController.unbanUser);
 
 //DELETE

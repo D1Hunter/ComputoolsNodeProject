@@ -7,8 +7,8 @@ class ApplicationListController{
     async managerRegister(req:Request,res:Response){
         try {
             const userId = req.user.id;
-            const message = await applicationlistService.managerRegister(userId);
-            return res.json({message});
+            const application = await applicationlistService.managerRegister(userId);
+            return res.json(application);
         } catch (error) {
             if(error instanceof ApiError){
                 return res.status(error.status).json({message:error.message});

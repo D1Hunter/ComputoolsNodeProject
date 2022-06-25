@@ -10,7 +10,8 @@ export const notBannedMiddleware = async (req:Request, res:Response, next:NextFu
         if(!user){
             return res.status(401).json({message: 'User not authorized'});
         }
-        const userBan = await banlistService.getByUser(user.id);
+        const userBans = await banlistService.getByUser(user.id);
+        const userBan = userBans[userBans.length-1];
         if(userBan){
             if(!userBan.unbanDate){
                 return res.status(400).json({ message: `You are banned for a reason:${userBan.reason}`});

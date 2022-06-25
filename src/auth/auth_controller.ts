@@ -72,11 +72,11 @@ class AuthController{
             const message = await authService.resetPass(activationLink,password);
             return res.json({message});
         }
-        catch(e){
-            console.log(e);
-            if(e instanceof ApiError){
-                return res.status(e.status).json({message:e.message});
+        catch(error){
+            if(error instanceof ApiError){
+                return res.status(error.status).json({message:error.message});
             }
+            console.log(error);
             return res.status(500).json({message:'Reset password error'});
         }
     }

@@ -7,16 +7,16 @@ export const AuthRouter=express();
 
 //POST
 AuthRouter.post('/register',[
-    check('email',"Wrong email").isString().isEmail(),
-    check('password',"Password must be longer than 4 and less than 12 characters").isString().isLength({min:4,max:12}),
-    check('login',"Login must be longer than 4 and less than 16 characters").isString().isLength({min:4,max:16}),
+    check('email','Wrong email').isString().isEmail(),
+    check('password','Password must be longer than 4 and less than 12 characters').isString().isLength({min:4,max:12}),
+    check('login','Login must be longer than 4 and less than 16 characters').isString().isLength({min:4,max:16}),
     check('firstName','First name must be longer than 4 and less than 30 characters').isString().isLength({min:4,max:30}),
     check('secondName','Second name must be longer than 4 and less than 30 characters').isString().isLength({min:4,max:30})
 ],authController.registration)
 
 AuthRouter.post('/login',[
-    check('email',"Wrong email").isString().isEmail(),
-    check('password',"Password must be longer than 4 and less than 12 characters").isString().isLength({min:4,max:12})
+    check('email','Wrong email').isString().isEmail(),
+    check('password','Password must be longer than 4 and less than 12 characters').isString().isLength({min:4,max:12})
 ],authController.login)
 
 AuthRouter.post('/forgot-pass',[
@@ -24,7 +24,7 @@ AuthRouter.post('/forgot-pass',[
 ],authController.forgotPass)
 
 AuthRouter.post('/reset-pass/:link',[
-    check('password',"Password must be longer than 4 and less than 12 characters").isLength({min:4,max:12})
+    check('password','Password must be longer than 4 and less than 12 characters').isString().isLength({min:4,max:12})
 ],authController.resetPass);
 
 //GET

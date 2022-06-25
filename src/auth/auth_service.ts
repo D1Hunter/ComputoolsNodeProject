@@ -1,6 +1,4 @@
 import bcrypt from 'bcryptjs';
-import * as uuid from 'uuid';
-import User from '../user/user_model';
 import ApiError from "../exceptions/api-error";
 import userService from '../user/user_service';
 import tokenService from './token_service';
@@ -13,10 +11,10 @@ class AuthService{
         if(checkUser){
             throw ApiError.badRequest('User with this email already exists');
         }
-        const hashPassword= await this.hashPassword(password);
+        const hashPassword = await this.hashPassword(password);
         const user = await userService.create(email,hashPassword,login,firstName,secondName);
         const role = await roleService.getRoleById(user.roleId);
-        const token = await tokenService.generateToken({id:user.id,email:user.email,teamId:user.teamId,role:role.name});
+        const token = await tokenService.generateToken(user.id,user.email,user.teamId,role.name);
         return token;
     }
 
@@ -30,7 +28,7 @@ class AuthService{
             throw ApiError.badRequest('Wrong password entered');
         }
         const role = await roleService.getRoleById(user.roleId);
-        const token = await tokenService.generateToken({id:user.id,email:user.email,teamId:user.teamId,role:role.name});
+        const token = await tokenService.generateToken(user.id,user.email,user.teamId,role.name);
         return token;
     }
 
@@ -39,9 +37,11 @@ class AuthService{
         if(!user){
             throw ApiError.badRequest('User with this email not exists');
         }
-        const activationLink=uuid.v4();
-        user.activationLink=activationLink;
-        await user.save();
+        const checkGoogleAccount = userService.userIsGoogleAccount(user);
+        if(checkGoogleAccount){
+            throw ApiError.badRequest(`The google account can't change password`)
+        }
+        const activationLink= await userService.createActivationLink(user);
         await mailService.sendActivationMail(user.email,`${process.env.API_URL}/api/auth/reset-pass/${activationLink}`);
         return `A link to reset your password has been sent to your email ${email}`;
     }
@@ -72,7 +72,7 @@ class AuthService{
             throw ApiError.badRequest('User with this email already exists');
         }
         const role = await roleService.getRoleById(user.roleId)
-        const token = await tokenService.generateToken({id:user.id,email:user.email,teamId:user.teamId,role:role.name});
+        const token = await tokenService.generateToken(user.id,user.email,user.teamId,role.name);
         return token;
     }
     

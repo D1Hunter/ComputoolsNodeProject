@@ -26,6 +26,7 @@ class TeamController{
             return res.status(500).json({message:'Team creation error'});
         }
     }
+
     async userTeamMembers(req:Request,res:Response){
         try {
             const teamId = req.user.teamId;
@@ -42,9 +43,13 @@ class TeamController{
             return res.status(500).json({message:'Error getting team'});
         }
     }
+
     async anotherTeamMembers(req:Request,res:Response){
         try{
             const {teamId} = req.params;
+            if(!Number(teamId)){
+                throw ApiError.badRequest('Team not found');
+            }
             const team = await teamService.getTeamById(Number(teamId));
             if(!team){
                 throw ApiError.badRequest('Team not found');
@@ -58,6 +63,7 @@ class TeamController{
             return res.status(500).json({message:'Error getting team by id'});
         }
     }
+
     async allTeamsMembers(req:Request,res:Response){
         try {
             const teams = await teamService.getAllTeams();
@@ -70,6 +76,7 @@ class TeamController{
             return res.status(500).json({message:'Error getting all teams'});
         }
     }
+    
     async kick(req:Request,res:Response){
         try {
             const errors = validationResult(req);
@@ -78,12 +85,12 @@ class TeamController{
             }
             const {userId,reason} = req.body;
             const userKick = await teamService.kick(userId,reason);
-            return userKick;
+            return res.json(userKick);
         } catch (error) {
-            console.log(error);
             if(error instanceof ApiError){
                 return res.status(error.status).json({message:error.message});
             }
+            console.log(error);
             return res.status(500).json({message:'Error kick user from team'});
         }
     }

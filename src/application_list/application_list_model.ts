@@ -15,10 +15,11 @@ export default class ApplicationList extends Model<IApplicationListAtributes>{
 
 ApplicationList.init({
     id:{type:DataTypes.INTEGER,primaryKey:true,autoIncrement:true},
-    userId:{type:DataTypes.INTEGER,unique:true},
+    userId:{type:DataTypes.INTEGER,allowNull:false},
     status:{type:DataTypes.STRING,allowNull:false}
 },{
     sequelize:database,
     timestamps: false,
-    modelName:'application-lists'
+    modelName:'application-list',
+    tableName:'application-list'
 })

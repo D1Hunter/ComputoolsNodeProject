@@ -1,4 +1,5 @@
 import {DataTypes,Model} from "sequelize"
+import TeamRequestApprovement from "../team_request_approvement/team_request_approvement_model";
 import database from "../db/instantiate_sequalize";
 
 interface ITeamRequestAtributes{
@@ -28,3 +29,6 @@ TeamRequest.init({
     timestamps: false,
     modelName:'team-requests'
 })
+
+TeamRequest.hasOne(TeamRequestApprovement);
+TeamRequestApprovement.belongsTo(TeamRequest);
